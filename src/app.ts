@@ -2,6 +2,8 @@ import express, { type Express } from 'express';
 import helmet from 'helmet';
 
 import { categoriasRotas } from './modules/categorias/categorias.rotas.js';
+import { equipamentosRotas } from './modules/equipamentos/equipamentos.rotas.js';
+import { unidadesRotas } from './modules/unidades/unidades.rotas.js';
 import { middlewareErro, rotaNaoEncontrada } from './shared/http/middleware-erro.js';
 
 export function criarApp(): Express {
@@ -15,6 +17,8 @@ export function criarApp(): Express {
   });
 
   app.use('/v1/categorias', categoriasRotas);
+  app.use('/v1/equipamentos', equipamentosRotas);
+  app.use('/v1/unidades', unidadesRotas);
 
   app.use(rotaNaoEncontrada);
   app.use(middlewareErro);
