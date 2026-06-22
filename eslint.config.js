@@ -25,5 +25,13 @@ export default tseslint.config(
       eqeqeq: 'error',
     },
   },
+  {
+    // O corpo das respostas no supertest é `any`; não vale tipar isso em teste.
+    files: ['tests/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+    },
+  },
   prettier,
 );

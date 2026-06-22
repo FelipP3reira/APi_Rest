@@ -17,5 +17,5 @@
     "rootDir": "src",
     "noEmit": true
   },
-  "include": ["src", "tests"]
+  "include": ["src", "tests", "vitest.config.ts"]
 }
