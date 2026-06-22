@@ -1,9 +1,16 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, StatusLocacao } from '@prisma/client';
 
 import { ErroConflito, ErroNaoEncontrado } from '../../shared/erros/erros-aplicacao.js';
 import { calcularSkip, montarPagina, type PaginaResultado } from '../../shared/http/paginacao.js';
 import { prisma } from '../../shared/prisma/cliente.js';
 import type { CriarLocacao, ListarLocacoesQuery } from './locacoes.schema.js';
+
+const STATUS_LEGIVEL: Record<StatusLocacao, string> = {
+  RESERVADA: 'reservada',
+  RETIRADA: 'retirada',
+  DEVOLVIDA: 'devolvida',
+  CANCELADA: 'cancelada',
+};
 
 const COM_UNIDADE = {
   unidade: { select: { equipamentoId: true, patrimonio: true } },
@@ -89,6 +96,58 @@ export async function listarLocacoes(
   ]);
 
   return montarPagina(registros, total, query.pagina, query.porPagina);
+}
+
+export async function registrarRetirada(id: string): Promise<LocacaoDetalhada> {
+  return transicionar(
+    id,
+    StatusLocacao.RESERVADA,
+    StatusLocacao.RETIRADA,
+    { retiradaEm: new Date() },
+    'registrar a retirada',
+  );
+}
+
+export async function registrarDevolucao(id: string): Promise<LocacaoDetalhada> {
+  return transicionar(
+    id,
+    StatusLocacao.RETIRADA,
+    StatusLocacao.DEVOLVIDA,
+    { devolvidaEm: new Date() },
+    'registrar a devolução',
+  );
+}
+
+export async function cancelarLocacao(id: string): Promise<LocacaoDetalhada> {
+  return transicionar(id, StatusLocacao.RESERVADA, StatusLocacao.CANCELADA, {}, 'cancelar');
+}
+
+// A transição é um UPDATE condicionado ao status atual, então duas chamadas
+// simultâneas (ex.: retirar duas vezes) não passam as duas: só a que casar com o
+// status esperado afeta a linha; a outra cai no count === 0.
+async function transicionar(
+  id: string,
+  statusEsperado: StatusLocacao,
+  novoStatus: StatusLocacao,
+  camposExtra: Prisma.LocacaoUpdateManyMutationInput,
+  acao: string,
+): Promise<LocacaoDetalhada> {
+  const resultado = await prisma.locacao.updateMany({
+    where: { id, status: statusEsperado },
+    data: { status: novoStatus, ...camposExtra },
+  });
+
+  if (resultado.count === 0) {
+    const existente = await prisma.locacao.findUnique({ where: { id }, select: { status: true } });
+    if (!existente) {
+      throw new ErroNaoEncontrado('Locação não encontrada.');
+    }
+    throw new ErroConflito(
+      `Não dá para ${acao}: a locação está ${STATUS_LEGIVEL[existente.status]}.`,
+    );
+  }
+
+  return buscarLocacao(id);
 }
 
 async function garantirCliente(tx: Prisma.TransactionClient, clienteId: string): Promise<void> {

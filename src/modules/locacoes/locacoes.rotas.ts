@@ -24,3 +24,21 @@ locacoesRotas.get('/:id', async (req, res) => {
   const locacao = await locacoes.buscarLocacao(id);
   res.json(apresentarLocacao(locacao));
 });
+
+locacoesRotas.post('/:id/retirada', async (req, res) => {
+  const { id } = idParamSchema.parse(req.params);
+  const locacao = await locacoes.registrarRetirada(id);
+  res.json(apresentarLocacao(locacao));
+});
+
+locacoesRotas.post('/:id/devolucao', async (req, res) => {
+  const { id } = idParamSchema.parse(req.params);
+  const locacao = await locacoes.registrarDevolucao(id);
+  res.json(apresentarLocacao(locacao));
+});
+
+locacoesRotas.post('/:id/cancelamento', async (req, res) => {
+  const { id } = idParamSchema.parse(req.params);
+  const locacao = await locacoes.cancelarLocacao(id);
+  res.json(apresentarLocacao(locacao));
+});
