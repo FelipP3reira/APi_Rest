@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: locadora-postgres
+    environment:
+      POSTGRES_USER: locadora
+      POSTGRES_PASSWORD: locadora
+      POSTGRES_DB: locadora
+    ports:
+      - '5432:5432'
+    volumes:
+      - locadora-pg:/var/lib/postgresql/data
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U locadora -d locadora']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  locadora-pg:
