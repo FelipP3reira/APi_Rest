@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StatusUnidade {
+  DISPONIVEL
+  MANUTENCAO
+  INATIVA
+}
+
+enum StatusLocacao {
+  RESERVADA
+  RETIRADA
+  DEVOLVIDA
+  CANCELADA
+}
+
+model Categoria {
+  id           String        @id @default(uuid()) @db.Uuid
+  nome         String        @unique
+  descricao    String?
+  criadoEm     DateTime      @default(now())
+  atualizadoEm DateTime      @updatedAt
+  equipamentos Equipamento[]
+
+  @@map("categorias")
+}
+
+model Equipamento {
+  id                  String               @id @default(uuid()) @db.Uuid
+  categoriaId         String               @db.Uuid
+  categoria           Categoria            @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  nome                String
+  descricao           String?
+  valorDiariaCentavos Int
+  caucaoCentavos      Int                  @default(0)
+  ativo               Boolean              @default(true)
+  criadoEm            DateTime             @default(now())
+  atualizadoEm        DateTime             @updatedAt
+  unidades            UnidadeEquipamento[]
+
+  @@index([categoriaId])
+  @@map("equipamentos")
+}
+
+model UnidadeEquipamento {
+  id            String        @id @default(uuid()) @db.Uuid
+  equipamentoId String        @db.Uuid
+  equipamento   Equipamento   @relation(fields: [equipamentoId], references: [id], onDelete: Restrict)
+  patrimonio    String        @unique
+  status        StatusUnidade @default(DISPONIVEL)
+  criadoEm      DateTime      @default(now())
+  locacoes      Locacao[]
+
+  @@index([equipamentoId])
+  @@map("unidades_equipamento")
+}
+
+model Cliente {
+  id        String    @id @default(uuid()) @db.Uuid
+  nome      String
+  documento String    @unique
+  email     String
+  telefone  String?
+  criadoEm  DateTime  @default(now())
+  locacoes  Locacao[]
+
+  @@map("clientes")
+}
+
+model Locacao {
+  id                 String             @id @default(uuid()) @db.Uuid
+  clienteId          String             @db.Uuid
+  cliente            Cliente            @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+  unidadeId          String             @db.Uuid
+  unidade            UnidadeEquipamento @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  inicioEm           DateTime           @db.Date
+  fimEm              DateTime           @db.Date
+  status             StatusLocacao      @default(RESERVADA)
+  valorTotalCentavos Int
+  retiradaEm         DateTime?
+  devolvidaEm        DateTime?
+  criadoEm           DateTime           @default(now())
+  atualizadoEm       DateTime           @updatedAt
+
+  @@index([clienteId])
+  @@index([unidadeId])
+  @@index([status])
+  @@map("locacoes")
+}

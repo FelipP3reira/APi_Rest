@@ -7,7 +7,8 @@ services:
       POSTGRES_PASSWORD: locadora
       POSTGRES_DB: locadora
     ports:
-      - '5432:5432'
+      # 5432 do host costuma estar ocupada por outro Postgres; mapeio pra 5433.
+      - '5433:5432'
     volumes:
       - locadora-pg:/var/lib/postgresql/data
       - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
